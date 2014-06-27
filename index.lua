@@ -9,9 +9,10 @@ local lunamark           = require 'lunamark'
 
 -- defaults
 ngx.header.content_type = 'text/plain'
-local DB_PREFIX = '/db/posts'
-local DB_ONE = DB_PREFIX .. '/'
-local DB_ALL = DB_PREFIX
+local DB_PREFIX = '/db/'
+local DB_POSTS_ALL = DB_PREFIX .. 'posts'
+local DB_POSTS_ONE = DB_POSTS_ALL .. '/'
+local DB_TAGS_ONE = DB_PREFIX .. 'tags/'
 TEMPLATEDIR = ngx.var.root .. 'public/templates/'
 
 -- stuff
@@ -22,10 +23,15 @@ local md_writer = lunamark.writer.html.new(md_opts)
 local md_parse = lunamark.reader.markdown.new(md_writer, md_opts)
 
 -- functions
-local get_json = function(slug, strip, multiple)
-  local url = DB_ALL
-  if slug then
-    url = DB_ONE .. slug
+local get_json = function(mode, crit, strip, multiple)
+  local url = ''
+  if mode == 'tag' then
+    url = DB_TAGS_ONE .. crit
+  else
+    url = DB_POSTS_ALL
+    if slug then
+      url = DB_POSTS_ONE .. slug
+    end
   end
   local res, m = ngx.location.capture(url)
   local data = cjson.decode(res.body)
@@ -49,6 +55,12 @@ local get_json = function(slug, strip, multiple)
   --return cjson.encode(data)
   return data
 end
+local get_posts_by_slug = function(crit, strip, multiple)
+  return get_json('slug', crit, strip, multiple)
+end
+local get_posts_by_tag = function(crit, strip, multiple)
+  return get_json('tag', crit, strip, multiple)
+end
 
 function prepare_post(p)
     p.body = p.body:gsub('\\n','\n')
@@ -63,7 +75,7 @@ end
 -- callback functions
 local show_index = function()
   ngx.header.content_type = 'text/html'
-  data = get_json("", false, true)
+  data = get_posts_by_slug("", false, true)
   ps = {}
 
   for k, p in pairs(data) do
@@ -80,17 +92,17 @@ local show_index = function()
 end
 local show_post_json = function(match)
   ngx.header.content_type = 'application/json'
-  data = get_json(match[1], true)
+  data = get_posts_by_slug(match[1], true)
   return cjson.encode(data)
 end
 local show_post_md = function(match)
   ngx.header.content_type = 'text/x-markdown; charset=UTF-8'
-  data = get_json(match[1], true)
+  data = get_posts_by_slug(match[1], true)
   return data.body
 end
 local show_post_txt = function(match)
   ngx.header.content_type = 'text/plain'
-  data = get_json(match[1])
+  data = get_posts_by_slug(match[1])
 
   data = prepare_post(data)
   local r = ''
@@ -101,7 +113,7 @@ local show_post_txt = function(match)
 end
 local show_post_html = function(match)
   ngx.header.content_type = 'text/html'
-  data = get_json(match[1])
+  data = get_posts_by_slug(match[1])
 
   ps = {}
   ps[0] = prepare_post(data)
