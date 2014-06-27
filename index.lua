@@ -28,10 +28,7 @@ local get_json = function(mode, crit, strip, multiple)
   if mode == 'tag' then
     url = DB_TAGS_ONE .. crit
   else
-    url = DB_POSTS_ALL
-    if slug then
-      url = DB_POSTS_ONE .. slug
-    end
+    url = crit and DB_POSTS_ONE .. crit or DB_POSTS_ALL
   end
   local res, m = ngx.location.capture(url)
   local data = cjson.decode(res.body)
@@ -55,14 +52,16 @@ local get_json = function(mode, crit, strip, multiple)
   --return cjson.encode(data)
   return data
 end
+
 local get_posts_by_slug = function(crit, strip, multiple)
   return get_json('slug', crit, strip, multiple)
 end
+
 local get_posts_by_tag = function(crit, strip, multiple)
   return get_json('tag', crit, strip, multiple)
 end
 
-function prepare_post(p)
+local prepare_post = function(p)
     p.body = p.body:gsub('\\n','\n')
     p.body = p.body:gsub('\\r','\r')
     p.body_html = md_parse(p.body)
@@ -117,7 +116,6 @@ local show_post_html = function(match)
 
   ps = {}
   ps[0] = prepare_post(data)
-  ps[0].backlink = ''
 
   local page = tirtemplate.tload('post.html')
   local context = {
@@ -128,16 +126,34 @@ local show_post_html = function(match)
 
   return page(context)
 end
+local show_tag_html = function(match)
+  ngx.header.content_type = 'text/html'
+  data = get_posts_by_tag(match[1], false, true)
+  ps = {}
 
+  for k, p in pairs(data) do
+    ps[k] = prepare_post(p)
+  end
+
+  local page = tirtemplate.tload('post.html')
+  local context = {
+    title = "moonwalk",
+    main = '',
+    posts = ps
+  }
+  return page(context)
+end
 
 -- ROUTING
 -- these are checked from top to bottom.
-local routes = {}
-routes[1] = { pattern = '(.+)\\.md$',    callback = show_post_md}
-routes[2] = { pattern = '(.+)\\.json$',  callback = show_post_json}
-routes[3] = { pattern = '(.+)\\.txt$',   callback = show_post_txt}
-routes[4] = { pattern = '(.+)$',         callback = show_post_html}
-routes[5] = { pattern = '$',             callback = show_index}
+local routes = {
+  { pattern = 'tag/(.+)$',     callback = show_tag_html},
+  { pattern = '(.+)\\.md$',    callback = show_post_md},
+  { pattern = '(.+)\\.json$',  callback = show_post_json},
+  { pattern = '(.+)\\.txt$',   callback = show_post_txt},
+  { pattern = '(.+)$',         callback = show_post_html},
+  { pattern = '$',             callback = show_index},
+}
 
 local BASE = '/'
 for _, route in pairs(routes) do
