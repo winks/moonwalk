@@ -1,0 +1,22 @@
+{( "header.html" )}
+<div id="main">
+{% for k, v in pairs(posts) do %}
+ <div class="post">
+  <div class="postbody">
+  {{ v.body_html }}
+
+  </div>
+  <div class="postmeta">
+   <div class="postdate">
+   <a href="/{{ v.backlink }}">{{ v.pretty_date }}</a>
+   </div>
+   <div class="posttags">
+   Tags: {% for _, vt in pairs(v.tags) do %}
+   <a href="/tag/{{ vt }}">{{ vt }}</a>
+   {% end %}
+   </div>
+  </div>
+ </div>
+{% end %}
+</div>
+{( "footer.html" )}
