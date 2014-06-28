@@ -13,11 +13,15 @@ local DB_PREFIX = '/db/'
 local DB_POSTS_ALL = DB_PREFIX .. 'posts'
 local DB_POSTS_ONE = DB_POSTS_ALL .. '/'
 local DB_TAGS_ONE = DB_PREFIX .. 'tags/'
+local DB_USERS_ONE = DB_PREFIX .. 'users/'
 TEMPLATEDIR = ngx.var.root .. 'public/templates/'
 
 -- stuff
 local strip_fields = { 'created_at', 'updated_at' }
 local array_fields = { 'tags', 'previous_shas' }
+
+local user_whitelist = { 'display_name', 'domain', 'locale', 'url' }
+
 local md_opts = {}
 local md_writer = lunamark.writer.html.new(md_opts)
 local md_parse = lunamark.reader.markdown.new(md_writer, md_opts)
@@ -27,6 +31,8 @@ local get_json = function(mode, crit, strip, multiple)
   local url = ''
   if mode == 'tag' then
     url = DB_TAGS_ONE .. crit
+  elseif mode == 'user' then
+    url = DB_USERS_ONE .. crit
   else
     url = crit and DB_POSTS_ONE .. crit or DB_POSTS_ALL
   end
@@ -40,8 +46,10 @@ local get_json = function(mode, crit, strip, multiple)
     end
     for _, kv in pairs(array_fields) do
       local a = v[kv]
-      a = a:gsub('[\\{\\}]', '')
-      v[kv] = a and #a > 0 and utils.split(a, ',') or {}
+      if a then
+        a = a:gsub('[\\{\\}]', '')
+        v[kv] = a and #a > 0 and utils.split(a, ',') or {}
+      end
     end
     if not multiple then
       return v
@@ -59,6 +67,10 @@ end
 
 local get_posts_by_tag = function(crit, strip, multiple)
   return get_json('tag', crit, strip, multiple)
+end
+
+local get_users_by_domain = function(crit, strip, multiple)
+  return get_json('user', crit, strip, multiple)
 end
 
 local prepare_post = function(p)
@@ -93,6 +105,26 @@ local show_post_json = function(match)
   ngx.header.content_type = 'application/json'
   data = get_posts_by_slug(match[1], true)
   return cjson.encode(data)
+end
+local show_user = function(match)
+  local format = ngx.var.arg_format or 'html'
+  data = get_users_by_domain(ngx.var.host)
+  local data2 = {}
+  for _, w in pairs(user_whitelist) do
+    data2[w] = data[w]
+  end
+
+  if format == 'json' then
+    ngx.header.content_type = 'application/json'
+    return cjson.encode(data2)
+  else
+    local us = {}
+    us[0] = data2
+    local page = tirtemplate.tload('_user.html')
+    local context = { title = 'moonwalk', users = us }
+    ngx.header.content_type = 'text/html'
+    return page(context)
+  end
 end
 local show_post_md = function(match)
   ngx.header.content_type = 'text/x-markdown; charset=UTF-8'
@@ -147,6 +179,7 @@ end
 -- ROUTING
 -- these are checked from top to bottom.
 local routes = {
+  { pattern = 'user',          callback = show_user},
   { pattern = 'tag/(.+)$',     callback = show_tag_html},
   { pattern = '(.+)\\.md$',    callback = show_post_md},
   { pattern = '(.+)\\.json$',  callback = show_post_json},
