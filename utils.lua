@@ -56,6 +56,10 @@ function utils.pretty_date(date, format)
   return os.date(format, date)
 end
 
+
+--- Generate a random slug
+-- @param int The number of alpabetic characters
+-- @param int The number of digits
 function utils.randomslug(a, b)
   if not b or tonumber(b) < 1 then
     b = 0
@@ -66,15 +70,16 @@ function utils.randomslug(a, b)
 
   math.randomseed(os.time())
 
-  local ret = ''
+  local t = {}
+  -- yes, this is chr(97)=a to chr(122)=z
   for i=1, a do
-    ret = ret .. string.char(math.random(97, 122))
+    table.insert(t, string.char(math.random(97, 122)))
   end
   for i=1, b do
-    ret = ret .. tostring(math.random(0, 9))
+    table.insert(t, tostring(math.random(0, 9)))
   end
 
-  return ret
+  return table.concat(t, '')
 end
 
 return utils

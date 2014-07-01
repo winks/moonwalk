@@ -9,7 +9,6 @@ local utils              = require 'utils'
 
 
 -- defaults
-ngx.header.content_type = 'text/plain'
 local DB_PREFIX = '/db/'
 local DB_POSTS_ALL = DB_PREFIX .. 'posts'
 local DB_POSTS_ONE = DB_POSTS_ALL .. '/'
@@ -66,8 +65,7 @@ local show_ping = function()
   return cjson.encode({status = ok, msg = ""})
 end
 local show_all_html = function()
-  ngx.header.content_type = 'text/html'
-  data = pmodel.get_posts()
+  local data = pmodel.get_posts()
   ps = {}
 
   for k, p in pairs(data) do
@@ -91,41 +89,34 @@ local show_user = function(match)
   end
 
   if format == 'json' then
-    ngx.header.content_type = 'application/json'
-    return cjson.encode(data2)
+    return {200, {['Content-type'] = 'application/json'}, cjson.encode(data2)}
   else
     local us = {}
     us[0] = data2
     local page = tirtemplate.tload('_user.html')
     local context = { title = 'moonwalk', users = us }
-    ngx.header.content_type = 'text/html'
     return page(context)
   end
 end
 local show_post_json = function(match)
-  ngx.header.content_type = 'application/json'
   local data = pmodel.get_post_by_slug(match[1])
-  return cjson.encode(data)
+  return {200, {['Content-type'] = 'application/json'}, cjson.encode(data)}
 end
 local show_post_md = function(match)
-  ngx.header.content_type = 'text/x-markdown; charset=UTF-8'
   local data = pmodel.get_post_by_slug(match[1])
-  return data.body
+  return {200, {['Content-type'] = 'text/x-markdown; charset=UTF-8'}, data.body}
 end
 local show_post_txt = function(match)
-  ngx.header.content_type = 'text/plain'
-  data = pmodel.get_post_by_slug(match[1])
-
+  local data = pmodel.get_post_by_slug(match[1])
   data = prepare_post(data)
   local r = ''
   r = r .. data.slug .. '\n----------\n'
   r = r .. data.body ..'\n----------\n'
   r = r .. data.body_html
-  return r
+  return {200, {['Content-type'] = 'text/plain'}, r}
 end
 local show_post_html = function(match)
-  ngx.header.content_type = 'text/html'
-  data = pmodel.get_post_by_slug(match[1])
+  local data = pmodel.get_post_by_slug(match[1])
 
   ps = {}
   ps[0] = prepare_post(data)
@@ -140,8 +131,7 @@ local show_post_html = function(match)
   return page(context)
 end
 local show_tag_html = function(match)
-  ngx.header.content_type = 'text/html'
-  data = pmodel.get_posts_by_tag(match[1])
+  local data = pmodel.get_posts_by_tag(match[1])
   ps = {}
 
   for k, p in pairs(data) do
@@ -184,6 +174,7 @@ for _, route in pairs(routes) do
       ngx.print(ret[3])
       ngx.exit(ngx.HTTP_OK)
     else
+      ngx.header.content_type = 'text/html'
       ngx.print(ret)
       ngx.exit(ngx.OK)
     end
