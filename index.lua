@@ -89,6 +89,10 @@ end
 
 -- callback functions
 local show_ping = function()
+
+  if 'POST' ~= ngx.var.request_method then
+    return {ngx.HTTP_NOT_ALLOWED, {}, cjson.encode({msg = 'error'})}
+  end
   ngx.req.read_body()
   local args, err = ngx.req.get_post_args()
   if not args then
@@ -238,7 +242,17 @@ for _, route in pairs(routes) do
   local uri = '^' .. BASE .. route['pattern']
   local match = ngx.re.match(ngx.var.uri, uri, '')
   if match then
-    ngx.print(route['callback'](match))
-    ngx.exit(ngx.OK)
+    local ret = route['callback'](match)
+    if type(ret) == 'table' then
+      ngx.status = ret[1]
+      for k, v in pairs(ret[2]) do
+        ngx.header[k] = v
+      end
+      ngx.print(ret[3])
+      ngx.exit(ngx.HTTP_OK)
+    else
+      ngx.print(ret)
+      ngx.exit(ngx.OK)
+    end
   end
 end
