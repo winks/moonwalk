@@ -1,10 +1,11 @@
 local ngx                = ngx or require 'ngx'
-local tirtemplate        = require 'tirtemplate'
-local redis              = require 'resty.redis'
 local cjson              = require 'cjson'
-local utils              = require 'utils'
 local rocks              = require 'luarocks.loader'
 local lunamark           = require 'lunamark'
+local tirtemplate        = require 'tirtemplate'
+
+local pmodel             = require 'pmodel'
+local utils              = require 'utils'
 
 
 -- defaults
@@ -17,8 +18,6 @@ local DB_USERS_ONE = DB_PREFIX .. 'users/'
 TEMPLATEDIR = ngx.var.root .. 'public/templates/'
 
 local THIS_HOST  = ngx.var.host
-local REDIS_HOST = os.getenv('REDIS_HOST')
-local REDIS_PORT = os.getenv('REDIS_PORT')
 
 -- stuff
 local strip_fields = { 'created_at', 'updated_at' }
@@ -101,36 +100,20 @@ local show_ping = function()
   if not args.url then
     return cjson.encode({msg = 'missing parameter: url'})
   end
-  local red = redis:new()
-  red:set_timeout(1000)
-  local ok, err = red:connect(REDIS_HOST, REDIS_PORT)
-  if not ok then
-    return cjson.encode({msg = 'error: ' .. err or ''})
-  end
-
-  local redis_key_ping = utils.randomslug(16)
-  local exists = red:hexists(redis_key_ping)
-  while exists do
-    redis_key_ping = utils.randomslug(16)
-    exists = red:hexists(redis_key_ping)
-  end
 
   local hash = {
-    url    = args.url,
-    time   = os.time(),
-    remote = ngx.var.REMOTE_ADDR,
+    url     = args.url,
+    remote  = ngx.var.REMOTE_ADDR or '',
     forward = ngx.var.http_x_forwarded_for or ''
   }
-  local ok, err = red:hmset(redis_key_ping, hash)
-  if not ok then
-    return cjson.encode({msg = 'error: ' .. err or ''})
+
+  local ok, msg = pmodel.save_ping(hash)
+
+  if ok then
+     return cjson.encode({status = ok, msg = msg})
+  else
+     return {500, {}, cjson.encode({msg = msg})}
   end
-
-  local redis_key_list = THIS_HOST .. '_pings'
-  red:rpush(redis_key_list, redis_key_ping)
-
-  return cjson.encode({msg = 'success: ' .. args.url})
-
 end
 local show_index = function()
   ngx.header.content_type = 'text/html'
