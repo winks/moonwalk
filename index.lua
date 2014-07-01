@@ -20,62 +20,13 @@ TEMPLATEDIR = ngx.var.root .. 'public/templates/'
 local THIS_HOST  = ngx.var.host
 
 -- stuff
-local strip_fields = { 'created_at', 'updated_at' }
-local array_fields = { 'tags', 'previous_shas' }
-
-local user_whitelist = { 'display_name', 'domain', 'locale', 'url' }
+local user_whitelist_fields = { 'display_name', 'domain', 'locale', 'url' }
 
 local md_opts = {}
 local md_writer = lunamark.writer.html.new(md_opts)
 local md_parse = lunamark.reader.markdown.new(md_writer, md_opts)
 
 -- functions
-local get_json = function(mode, crit, strip, multiple)
-  local url = ''
-  if mode == 'tag' then
-    url = DB_TAGS_ONE .. crit
-  elseif mode == 'user' then
-    url = DB_USERS_ONE .. crit
-  else
-    url = crit and DB_POSTS_ONE .. crit or DB_POSTS_ALL
-  end
-  local res, m = ngx.location.capture(url)
-  local data = cjson.decode(res.body)
-  for k, v in pairs(data) do
-    if strip then
-      for _, kv in pairs(strip_fields) do
-        v[kv] = nil
-      end
-    end
-    for _, kv in pairs(array_fields) do
-      local a = v[kv]
-      if a then
-        a = a:gsub('[\\{\\}]', '')
-        v[kv] = a and #a > 0 and utils.split(a, ',') or {}
-      end
-    end
-    if not multiple then
-      return v
-      -- return cjson.encode(v)
-    end
-    data[k] = v
-  end
-  --return cjson.encode(data)
-  return data
-end
-
-local get_posts_by_slug = function(crit, strip, multiple)
-  return get_json('slug', crit, strip, multiple)
-end
-
-local get_posts_by_tag = function(crit, strip, multiple)
-  return get_json('tag', crit, strip, multiple)
-end
-
-local get_users_by_domain = function(crit, strip, multiple)
-  return get_json('user', crit, strip, multiple)
-end
-
 local prepare_post = function(p)
     p.body = p.body:gsub('\\n','\n')
     p.body = p.body:gsub('\\r','\r')
@@ -88,7 +39,6 @@ end
 
 -- callback functions
 local show_ping = function()
-
   if 'POST' ~= ngx.var.request_method then
     return {ngx.HTTP_NOT_ALLOWED, {}, cjson.encode({msg = 'error'})}
   end
@@ -109,15 +59,15 @@ local show_ping = function()
 
   local ok, msg = pmodel.save_ping(hash)
 
-  if ok then
-     return cjson.encode({status = ok, msg = msg})
-  else
+  if not ok then
      return {500, {}, cjson.encode({msg = msg})}
   end
+
+  return cjson.encode({status = ok, msg = ""})
 end
-local show_index = function()
+local show_all_html = function()
   ngx.header.content_type = 'text/html'
-  data = get_posts_by_slug("", false, true)
+  data = pmodel.get_posts()
   ps = {}
 
   for k, p in pairs(data) do
@@ -132,16 +82,11 @@ local show_index = function()
   }
   return page(context)
 end
-local show_post_json = function(match)
-  ngx.header.content_type = 'application/json'
-  data = get_posts_by_slug(match[1], true)
-  return cjson.encode(data)
-end
 local show_user = function(match)
   local format = ngx.var.arg_format or 'html'
-  data = get_users_by_domain(THIS_HOST)
+  local data = pmodel.get_user_by_domain(THIS_HOST)
   local data2 = {}
-  for _, w in pairs(user_whitelist) do
+  for _, w in pairs(user_whitelist_fields) do
     data2[w] = data[w]
   end
 
@@ -157,14 +102,19 @@ local show_user = function(match)
     return page(context)
   end
 end
+local show_post_json = function(match)
+  ngx.header.content_type = 'application/json'
+  local data = pmodel.get_post_by_slug(match[1])
+  return cjson.encode(data)
+end
 local show_post_md = function(match)
   ngx.header.content_type = 'text/x-markdown; charset=UTF-8'
-  data = get_posts_by_slug(match[1], true)
+  local data = pmodel.get_post_by_slug(match[1])
   return data.body
 end
 local show_post_txt = function(match)
   ngx.header.content_type = 'text/plain'
-  data = get_posts_by_slug(match[1])
+  data = pmodel.get_post_by_slug(match[1])
 
   data = prepare_post(data)
   local r = ''
@@ -175,7 +125,7 @@ local show_post_txt = function(match)
 end
 local show_post_html = function(match)
   ngx.header.content_type = 'text/html'
-  data = get_posts_by_slug(match[1])
+  data = pmodel.get_post_by_slug(match[1])
 
   ps = {}
   ps[0] = prepare_post(data)
@@ -191,7 +141,7 @@ local show_post_html = function(match)
 end
 local show_tag_html = function(match)
   ngx.header.content_type = 'text/html'
-  data = get_posts_by_tag(match[1], false, true)
+  data = pmodel.get_posts_by_tag(match[1])
   ps = {}
 
   for k, p in pairs(data) do
@@ -217,7 +167,7 @@ local routes = {
   { pattern = '(.+)\\.json$',  callback = show_post_json},
   { pattern = '(.+)\\.txt$',   callback = show_post_txt},
   { pattern = '(.+)$',         callback = show_post_html},
-  { pattern = '$',             callback = show_index},
+  { pattern = '$',             callback = show_all_html},
 }
 
 local BASE = '/'
