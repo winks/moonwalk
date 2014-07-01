@@ -56,4 +56,25 @@ function utils.pretty_date(date, format)
   return os.date(format, date)
 end
 
+function utils.randomslug(a, b)
+  if not b or tonumber(b) < 1 then
+    b = 0
+  end
+  if not a or tonumber(a) < 1 then
+    a = 0
+  end
+
+  math.randomseed(os.time())
+
+  local ret = ''
+  for i=1, a do
+    ret = ret .. string.char(math.random(97, 122))
+  end
+  for i=1, b do
+    ret = ret .. tostring(math.random(0, 9))
+  end
+
+  return ret
+end
+
 return utils

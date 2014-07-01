@@ -16,6 +16,10 @@ local DB_TAGS_ONE = DB_PREFIX .. 'tags/'
 local DB_USERS_ONE = DB_PREFIX .. 'users/'
 TEMPLATEDIR = ngx.var.root .. 'public/templates/'
 
+local THIS_HOST  = ngx.var.host
+local REDIS_HOST = os.getenv('REDIS_HOST')
+local REDIS_PORT = os.getenv('REDIS_PORT')
+
 -- stuff
 local strip_fields = { 'created_at', 'updated_at' }
 local array_fields = { 'tags', 'previous_shas' }
@@ -84,6 +88,46 @@ local prepare_post = function(p)
 end
 
 -- callback functions
+local show_ping = function()
+  ngx.req.read_body()
+  local args, err = ngx.req.get_post_args()
+  if not args then
+    return cjson.encode({msg = 'error: ' .. err or ''})
+  end
+  if not args.url then
+    return cjson.encode({msg = 'missing parameter: url'})
+  end
+  local red = redis:new()
+  red:set_timeout(1000)
+  local ok, err = red:connect(REDIS_HOST, REDIS_PORT)
+  if not ok then
+    return cjson.encode({msg = 'error: ' .. err or ''})
+  end
+
+  local redis_key_ping = utils.randomslug(16)
+  local exists = red:hexists(redis_key_ping)
+  while exists do
+    redis_key_ping = utils.randomslug(16)
+    exists = red:hexists(redis_key_ping)
+  end
+
+  local hash = {
+    url    = args.url,
+    time   = os.time(),
+    remote = ngx.var.REMOTE_ADDR,
+    forward = ngx.var.http_x_forwarded_for or ''
+  }
+  local ok, err = red:hmset(redis_key_ping, hash)
+  if not ok then
+    return cjson.encode({msg = 'error: ' .. err or ''})
+  end
+
+  local redis_key_list = THIS_HOST .. '_pings'
+  red:rpush(redis_key_list, redis_key_ping)
+
+  return cjson.encode({msg = 'success: ' .. args.url})
+
+end
 local show_index = function()
   ngx.header.content_type = 'text/html'
   data = get_posts_by_slug("", false, true)
@@ -108,7 +152,7 @@ local show_post_json = function(match)
 end
 local show_user = function(match)
   local format = ngx.var.arg_format or 'html'
-  data = get_users_by_domain(ngx.var.host)
+  data = get_users_by_domain(THIS_HOST)
   local data2 = {}
   for _, w in pairs(user_whitelist) do
     data2[w] = data[w]
@@ -180,6 +224,7 @@ end
 -- these are checked from top to bottom.
 local routes = {
   { pattern = 'user',          callback = show_user},
+  { pattern = 'ping',          callback = show_ping},
   { pattern = 'tag/(.+)$',     callback = show_tag_html},
   { pattern = '(.+)\\.md$',    callback = show_post_md},
   { pattern = '(.+)\\.json$',  callback = show_post_json},
