@@ -5,7 +5,7 @@ local ctrl = require 'ctrl'
 -- these are checked from top to bottom.
 local routes = {
   { pattern = 'posts(\\.json)?$', callback = ctrl.show_posts},
-  { pattern = 'user',             callback = ctrl.show_user},
+  { pattern = 'user(\\.json)?',   callback = ctrl.show_user},
   { pattern = 'ping$',            callback = ctrl.show_ping},
   { pattern = 'tag/(.+)$',        callback = ctrl.show_tag_html},
   { pattern = '(.+)\\.md$',       callback = ctrl.show_post_md},

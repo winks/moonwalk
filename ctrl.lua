@@ -71,6 +71,9 @@ end
 
 function ctrl.show_user(match)
   local format = ngx.var.arg_format or 'html'
+  if '.json' == match[1] then
+    format = 'json'
+  end
   local data = pmodel.get_user_by_domain(THIS_HOST)
   local data2 = {}
   for _, w in pairs(user_whitelist_fields) do
