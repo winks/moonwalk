@@ -89,4 +89,14 @@ function utils.log(what)
   ngx.log(ngx.CRIT, tostring(what))
 end
 
+function utils.prepare_post(p)
+    p.body = p.body:gsub('\\n','\n')
+    p.body = p.body:gsub('\\r','\r')
+    p.body_html = md_parse(p.body)
+    local dt = utils.strtotime(p.updated_at)
+    p.pretty_date = utils.pretty_date(dt, '%Y-%m-%d %H:%M')
+    p.backlink = p.slug
+    return p
+end
+
 return utils
