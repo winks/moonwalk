@@ -53,8 +53,17 @@ function model.save_ping(hash)
   return out
 end
 
-function model.get_posts()
-  local query = "SELECT * FROM posts ORDER BY updated_at DESC;"
+function model.get_posts(updated_since)
+  if updated_since then
+    update_string = ' WHERE extract(epoch from updated_at) >= ' .. updated_since
+  else
+    update_string = ''
+  end
+  local query = string.format(
+    "SELECT * FROM posts%s ORDER BY updated_at DESC;",
+    update_string
+  )
+  utils.log(query)
   local data = model.query(query)
   data = model.plain_to_table(data)
   return data

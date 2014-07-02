@@ -64,6 +64,16 @@ local show_ping = function()
 
   return cjson.encode({status = ok, msg = ""})
 end
+local show_posts = function(match)
+  ngx.log(ngx.CRIT, ngx.var.uri)
+  ngx.log(ngx.CRIT, match[1])
+  if '.json' == match[1] then
+    local updated_since = tonumber(ngx.var.arg_updated_since) or 1388530800
+    local data = pmodel.get_posts(updated_since)
+    return cjson.encode(data)
+  end
+  return ngx.redirect('http://' .. THIS_HOST  .. '/', 301)
+end
 local show_all_html = function()
   local data = pmodel.get_posts()
   ps = {}
@@ -146,10 +156,18 @@ local show_tag_html = function(match)
   }
   return page(context)
 end
+local show_foo = function()
+  --local res, m = ngx.location.capture("/db/query", { body = "SELECT * FROM posts;" })
+  --local data = cjson.decode(res.body)
+  --return res.body
+  local a = pmodel.query("SELECT * FROM posts;")
+  return cjson.encode(a)
+end
 
 -- ROUTING
 -- these are checked from top to bottom.
 local routes = {
+  { pattern = 'posts(\\.json)?', callback = show_posts},
   { pattern = 'user',          callback = show_user},
   { pattern = 'ping',          callback = show_ping},
   { pattern = 'tag/(.+)$',     callback = show_tag_html},

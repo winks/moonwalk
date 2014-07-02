@@ -82,4 +82,11 @@ function utils.randomslug(a, b)
   return table.concat(t, '')
 end
 
+function utils.log(what)
+  if 'table' == type(what) then
+    what = table.concat(what, '|')
+  end
+  ngx.log(ngx.CRIT, tostring(what))
+end
+
 return utils
