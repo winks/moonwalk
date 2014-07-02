@@ -156,13 +156,6 @@ local show_tag_html = function(match)
   }
   return page(context)
 end
-local show_foo = function()
-  --local res, m = ngx.location.capture("/db/query", { body = "SELECT * FROM posts;" })
-  --local data = cjson.decode(res.body)
-  --return res.body
-  local a = pmodel.query("SELECT * FROM posts;")
-  return cjson.encode(a)
-end
 
 -- ROUTING
 -- these are checked from top to bottom.
