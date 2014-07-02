@@ -1,5 +1,12 @@
 local utils = {}
-local ngx = ngx or require 'ngx'
+
+local ngx      = ngx or require 'ngx'
+local lunamark = require 'lunamark'
+
+local md_opts = {}
+local md_writer = lunamark.writer.html.new(md_opts)
+local md_parse = lunamark.reader.markdown.new(md_writer, md_opts)
+
 
 --- Split a string using a pattern.
 -- @param str The string to search in

@@ -4,15 +4,15 @@ local ctrl = require 'ctrl'
 -- ROUTING
 -- these are checked from top to bottom.
 local routes = {
-  { pattern = 'posts(\\.json)?', callback = ctrl.show_posts},
-  { pattern = 'user',            callback = ctrl.show_user},
-  { pattern = 'ping',            callback = ctrl.show_ping},
-  { pattern = 'tag/(.+)$',       callback = ctrl.show_tag_html},
-  { pattern = '(.+)\\.md$',      callback = ctrl.show_post_md},
-  { pattern = '(.+)\\.json$',    callback = ctrl.show_post_json},
-  { pattern = '(.+)\\.txt$',     callback = ctrl.show_post_txt},
-  { pattern = '(.+)$',           callback = ctrl.show_post_html},
-  { pattern = '$',               callback = ctrl.show_all_html},
+  { pattern = 'posts(\\.json)?$', callback = ctrl.show_posts},
+  { pattern = 'user',             callback = ctrl.show_user},
+  { pattern = 'ping$',            callback = ctrl.show_ping},
+  { pattern = 'tag/(.+)$',        callback = ctrl.show_tag_html},
+  { pattern = '(.+)\\.md$',       callback = ctrl.show_post_md},
+  { pattern = '(.+)\\.json$',     callback = ctrl.show_post_json},
+  { pattern = '(.+)\\.txt$',      callback = ctrl.show_post_txt},
+  { pattern = '(.+)$',            callback = ctrl.show_post_html},
+  { pattern = '$',                callback = ctrl.show_all_html},
 }
 
 local BASE = '/'

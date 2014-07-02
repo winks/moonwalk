@@ -1,12 +1,11 @@
 local ctrl = {}
 
-local ngx                = ngx or require 'ngx'
-local cjson              = require 'cjson'
-local lunamark           = require 'lunamark'
-local tirtemplate        = require 'tirtemplate'
+local ngx         = ngx or require 'ngx'
+local cjson       = require 'cjson'
+local tirtemplate = require 'tirtemplate'
 
-local pmodel             = require 'pmodel'
-local utils              = require 'utils'
+local pmodel      = require 'pmodel'
+local utils       = require 'utils'
 
 
 -- stuff
@@ -14,13 +13,9 @@ TEMPLATEDIR = ngx.var.root .. 'public/templates/'
 local THIS_HOST  = ngx.var.host
 local user_whitelist_fields = { 'display_name', 'domain', 'locale', 'url' }
 
-local md_opts = {}
-local md_writer = lunamark.writer.html.new(md_opts)
-local md_parse = lunamark.reader.markdown.new(md_writer, md_opts)
-
 
 -- callback functions
-local ctrl.show_ping = function()
+function ctrl.show_ping()
   if 'POST' ~= ngx.var.request_method then
     return {ngx.HTTP_NOT_ALLOWED, {}, cjson.encode({msg = 'error'})}
   end
@@ -48,7 +43,7 @@ local ctrl.show_ping = function()
   return cjson.encode({status = ok, msg = ""})
 end
 
-local ctrl.show_posts = function(match)
+function ctrl.show_posts(match)
   if '.json' == match[1] then
     local updated_since = tonumber(ngx.var.arg_updated_since) or 1388530800
     local data = pmodel.get_posts(updated_since)
@@ -57,7 +52,7 @@ local ctrl.show_posts = function(match)
   return ngx.redirect('http://' .. THIS_HOST  .. '/', 301)
 end
 
-local ctrl.show_all_html = function()
+function ctrl.show_all_html()
   local data = pmodel.get_posts()
   ps = {}
 
@@ -74,7 +69,7 @@ local ctrl.show_all_html = function()
   return page(context)
 end
 
-local ctrl.show_user = function(match)
+function ctrl.show_user(match)
   local format = ngx.var.arg_format or 'html'
   local data = pmodel.get_user_by_domain(THIS_HOST)
   local data2 = {}
@@ -93,17 +88,17 @@ local ctrl.show_user = function(match)
   end
 end
 
-local ctrl.show_post_json = function(match)
+function ctrl.show_post_json(match)
   local data = pmodel.get_post_by_slug(match[1])
   return {200, {['Content-type'] = 'application/json'}, cjson.encode(data)}
 end
 
-local ctrl.show_post_md = function(match)
+function ctrl.show_post_md(match)
   local data = pmodel.get_post_by_slug(match[1])
   return {200, {['Content-type'] = 'text/x-markdown; charset=UTF-8'}, data.body}
 end
 
-local ctrl.show_post_txt = function(match)
+function ctrl.show_post_txt(match)
   local data = pmodel.get_post_by_slug(match[1])
   data = utils.prepare_post(data)
   local r = ''
@@ -113,7 +108,7 @@ local ctrl.show_post_txt = function(match)
   return {200, {['Content-type'] = 'text/plain'}, r}
 end
 
-local ctrl.show_post_html = function(match)
+function ctrl.show_post_html(match)
   local data = pmodel.get_post_by_slug(match[1])
 
   ps = {}
@@ -129,7 +124,7 @@ local ctrl.show_post_html = function(match)
   return page(context)
 end
 
-local ctrl.show_tag_html = function(match)
+function ctrl.show_tag_html(match)
   local data = pmodel.get_posts_by_tag(match[1])
   ps = {}
 
