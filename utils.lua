@@ -54,7 +54,6 @@ function utils.strtotime(str)
 end
 
 
-
 function utils.pretty_date(date, format)
   if not format then
     format = '%Y-%m-%d'
@@ -89,6 +88,8 @@ function utils.randomslug(a, b)
   return table.concat(t, '')
 end
 
+--- Log stuff via nginx
+-- @param mixed stuff
 function utils.log(what)
   if 'table' == type(what) then
     what = table.concat(what, '|')
@@ -104,6 +105,45 @@ function utils.prepare_post(p)
     p.pretty_date = utils.pretty_date(dt, '%Y-%m-%d %H:%M')
     p.backlink = p.slug
     return p
+end
+
+--- Send something to the browser
+-- @param mixed Something to display:
+--              - table: {status, headers, content}
+--              - string: content
+--              - nil: nothing
+function utils.handle(ret)
+  if type(ret) == 'table' and #ret == 3 then
+    ngx.status = ret[1]
+    for k, v in pairs(ret[2]) do
+      ngx.header[k] = v
+    end
+    ngx.print(ret[3])
+    ngx.exit(ngx.HTTP_OK)
+  elseif ret then
+    ngx.header.content_type = 'text/html'
+    ngx.print(ret)
+    ngx.exit(ngx.OK)
+  end
+end
+
+--- Execute stuff before the main handler
+-- @param table A route definition
+-- @param table The route incl. matches
+function utils.pre_handler(route, match)
+  if route['before'] then
+    for _, cb_before in pairs(route['before']) do
+      utils.handle(cb_before())
+    end
+  end
+end
+
+--- The main routing stuff
+-- @param table A route definiton
+-- @param table The route incl. matches
+function utils.main_handler(route, match)
+  local ret = route['callback'](match)
+  utils.handle(ret)
 end
 
 return utils

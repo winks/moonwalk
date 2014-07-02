@@ -16,9 +16,6 @@ local user_whitelist_fields = { 'display_name', 'domain', 'locale', 'url' }
 
 -- callback functions
 function ctrl.show_ping()
-  if 'POST' ~= ngx.var.request_method then
-    return {ngx.HTTP_NOT_ALLOWED, {}, cjson.encode({msg = 'error'})}
-  end
   ngx.req.read_body()
   local args, err = ngx.req.get_post_args()
   if not args then
@@ -142,6 +139,12 @@ function ctrl.show_tag_html(match)
     posts = ps
   }
   return page(context)
+end
+
+function ctrl.post_only()
+  if 'POST' ~= ngx.var.request_method then
+    return {ngx.HTTP_NOT_ALLOWED, {}, cjson.encode({msg = 'error: 405'})}
+  end
 end
 
 return ctrl
