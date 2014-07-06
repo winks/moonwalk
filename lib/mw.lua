@@ -55,8 +55,19 @@ function mw.get_posts_tag(self, tag)
   return mw.plain_to_table(posts:get_all())
 end
 
-function mw.get_posts(self, format)
-  posts = Posts:paginated('ORDER BY created_at DESC')
+function mw.get_posts(self, crit, format)
+  local x = ''
+  if crit then
+    if crit.updated_since then
+      local ts = tonumber(crit.updated_since) or 1388530800
+      x = 'WHERE extract(epoch from updated_at) >= ' .. ts .. ' '
+    end
+  end
+  local s = string.format(
+    '%sORDER BY created_at DESC',
+    x
+  )
+  posts = Posts:paginated(s)
   clean = (format == 'json')
   return mw.plain_to_table(posts:get_all(), clean)
 end

@@ -54,7 +54,7 @@ app:get("/user", function(self)
 end)
 
 app:get("/posts.json", function(self)
-  posts = mw.get_posts(self, 'json')
+  posts = mw.get_posts(self, {updated_since = self.params.updated_since}, 'json')
   return { json = posts }
 end)
 
@@ -63,7 +63,7 @@ app:get("/posts", function(self)
 end)
 
 app:get("/:tmp", function(self)
-  self.title = "moonwalk" .. self.params.tmp
+  self.title = "moonwalk"
   local p = self.req.parsed_url.path
   print('[' .. p .. ']')
   local slug, format = string.match(p, '%/(%w+)%.(%w+)$')
