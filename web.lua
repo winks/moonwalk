@@ -42,51 +42,58 @@ app:get('by_tag', "/tag/:tag", function(self)
   return { render = "_post" }
 end)
 
-app:get("/:tmp", function(self)
+app:get("/user.json", function(self)
+  user = mw.get_user(self, 'json')
+  return { json = user }
+end)
+
+app:get("/user", function(self)
   self.title = "moonwalk"
+  user = mw.get_user(self)
+  return { render = "_user" }
+end)
+
+app:get("/posts.json", function(self)
+  posts = mw.get_posts(self, 'json')
+  return { json = posts }
+end)
+
+app:get("/posts", function(self)
+  return { redirect_to = self:url_for("index") }
+end)
+
+app:get("/:tmp", function(self)
+  self.title = "moonwalk" .. self.params.tmp
   local p = self.req.parsed_url.path
-  if p == '/user.json' then
-    user = mw.get_user(self, 'json')
-    return { json = user }
-  elseif p == '/user' then
-    user = mw.get_user(self)
-    return { render = "_user" }
-  elseif p == '/posts.json' then
-    posts = mw.get_posts(self, 'json')
-    return { json = posts }
-  elseif p == '/posts' then
-    return { redirect_to = self:url_for("index") }
-  else
-    print('[' .. p .. ']')
-    local slug, format = string.match(p, '%/(%w+)%.(%w+)$')
-    if slug then
-      if format ~= 'json' and format ~= 'md' then
-        format = 'html'
-      end
-      slug = string.sub(slug, 1)
-    else
-      slug = string.sub(p, 2)
+  print('[' .. p .. ']')
+  local slug, format = string.match(p, '%/(%w+)%.(%w+)$')
+  if slug then
+    if format ~= 'json' and format ~= 'md' then
       format = 'html'
     end
-    posts = mw.get_post(self, slug, format)
-    if not posts then
-      status_code = 404
-      if format == 'json' then
-        return { status = status_code, json = {} }
-      else
-        return { status = status_code, render = "_error" }
-      end
-    end
-    if format == 'json' then
-      return { json = posts[1] }
-    elseif format == 'md' then
-      return { content_type = 'text/x-markdown', render = '_md', layout = false }
-    end
-    local navi_fn = mw.tpl('_navi')
-    preface = navi_fn({session = self.session})
-    posts[1] = utils.prepare_post(posts[1])
-    return { render = "_post" }
+    slug = string.sub(slug, 1)
+  else
+    slug = string.sub(p, 2)
+    format = 'html'
   end
+  posts = mw.get_post(self, slug, format)
+  if not posts then
+    status_code = 404
+    if format == 'json' then
+      return { status = status_code, json = {} }
+    else
+      return { status = status_code, render = "_error" }
+    end
+  end
+  if format == 'json' then
+    return { json = posts[1] }
+  elseif format == 'md' then
+    return { content_type = 'text/x-markdown', render = '_md', layout = false }
+  end
+  local navi_fn = mw.tpl('_navi')
+  preface = navi_fn({session = self.session})
+  posts[1] = utils.prepare_post(posts[1])
+  return { render = "_post" }
 end)
 
 app:get('/new/post', capture_errors(function(self)
