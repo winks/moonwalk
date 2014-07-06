@@ -12,8 +12,14 @@ function model.plain_to_table(data, fields)
     for _, field in pairs(fields) do
       local a = data[k][field]
       if a then
-        a = a:gsub('[\\{\\}]', '')
-        data[k][field] = a and #a > 0 and utils.split(a, ',') or {}
+        if type(a) == 'string' then
+          a = a:gsub('[\\{\\}]', '')
+          data[k][field] = a and #a > 0 and utils.split(a, ',') or {}
+        elseif type(a) == 'userdata' then
+          data[k][field] = {}
+        end
+      else
+        data[k][field] = {}
       end
     end
   end

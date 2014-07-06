@@ -49,6 +49,11 @@ function utils.strtotime(str)
     _,_,y,m,d,h,i,s,z,o1=string.find(str, pat1)
   end
 
+  if not y then
+    local pat3 = '(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+).(%d+)([\\+-])(%d+)'
+    _,_,y,m,d,h,i,s,ss,z,o1,o2=string.find(str, pat3)
+  end
+
   local t = os.time{year=y,month=m,day=d,hour=h,min=i,sec=s}
   return t
 end
@@ -60,6 +65,10 @@ function utils.pretty_date(date, format)
   end
 
   return os.date(format, date)
+end
+
+function utils.sanitize(s)
+  return string.gsub(s, '[^%a%d]', '_')
 end
 
 
