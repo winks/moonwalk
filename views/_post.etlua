@@ -12,7 +12,7 @@
         <a href="/<%= v.backlink %>"><%= v.pretty_date %></a>
       </div>
       <div class="posttags">
-<% if #v.tags > 0 then %>
+<% if v.tags and #v.tags > 0 then %>
         Tags: <% for _, vt in pairs(v.tags) do %>
         <a href="/tag/<%= vt %>"><%= vt %></a><% end %>
 <% end %>
