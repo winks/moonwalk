@@ -1,9 +1,8 @@
-local lapis = require "lapis"
-local db = require 'lapis.db'
-local app_helpers = require("lapis.application")
-local validate = require("lapis.validate")
+local lapis  = require 'lapis'
+local db     = require 'lapis.db'
+local helper = require 'lapis.application'
 
-local mw = require 'lib.mw'
+local mw    = require 'lib.mw'
 local utils = require 'lib.utils'
 local etlua = require 'etlua'
 
@@ -11,23 +10,20 @@ local Model = require('lapis.db.model').Model
 local Users = Model:extend('users', { primary_key = 'domain' })
 local Posts = Model:extend('posts', { primary_key = 'slug' })
 
-local capture_errors = app_helpers.capture_errors
+local capture_errors = helper.capture_errors
 
 local THIS_HOST  = ngx.var.host
 THIS_HOST = 'f5n.de'
+
 
 local app = lapis.Application()
 app:enable("etlua")
 app.layout = require 'views.my_layout'
 
---[[app:before_filter(function(self)
-  --self.csrf_token = csrf.generate_token(self)
-end)]]--
-
 app:get('index', "/", function(self)
   self.title = "moonwalk"
-  local xx = mw.tpl('_navi')
-  preface = xx({session = self.session})
+  local navi_fn = mw.tpl('_navi')
+  preface = navi_fn({session = self.session})
   posts = mw.get_posts(self)
   for k, v in pairs(posts) do
     posts[k] = utils.prepare_post(v)
@@ -37,8 +33,8 @@ end)
 
 app:get('by_tag', "/tag/:tag", function(self)
   self.title = "moonwalk"
-  local xx = mw.tpl('_navi')
-  preface = xx({session = self.session})
+  local navi_fn = mw.tpl('_navi')
+  preface = navi_fn({session = self.session})
   posts = mw.get_posts_tag(self, self.params.tag)
   for k, v in pairs(posts) do
     posts[k] = utils.prepare_post(v)
@@ -86,50 +82,11 @@ app:get("/:tmp", function(self)
     elseif format == 'md' then
       return { content_type = 'text/x-markdown', render = '_md', layout = false }
     end
-    local xx = mw.tpl('_navi')
-    preface = xx({session = self.session})
+    local navi_fn = mw.tpl('_navi')
+    preface = navi_fn({session = self.session})
     posts[1] = utils.prepare_post(posts[1])
     return { render = "_post" }
   end
-end)
-
-app:get("/o/user.json", function(self)
-  user = Users:find({ domain = THIS_HOST })
-  user.display_name="Json"
-  if user then
-    return { render = "_user" }
-  else
-    return "no user"
-  end
-end)
-
-app:get("/o/user", function(self)
-  local res = db.query('select * from users where domain = ?', THIS_HOST)
-  if res and res[1] then
-    user = res[1]
-    return { render = "_user" }
-  else
-    return "nope"
-  end
-end)
-
-app:get('/p/*', function(self)
-  self.title = 'moonwalk'
-  post = Posts:find({ slug = self.params.splat })
-  if not post.tags then
-    post.tags = {}
-  end
-  if post then
-    posts = { post }
-    return { render = "_post" }
-  else
-    return "nopes"
-  end
-end)
-
-app:match('/logout', function(self)
-  mw.logout(self)
-  return { redirect_to = self:url_for("index") }
 end)
 
 app:get('/new/post', capture_errors(function(self)
@@ -164,6 +121,12 @@ app:post('/new/post', function(self)
     referenced_guid = '',
   })
 
+  return { redirect_to = self:url_for("index") }
+end)
+
+app:match('/logout', function(self)
+  mw.logout(self)
+  return { redirect_to = self:url_for("index") }
 end)
 
 app:match('/login', function(self)
