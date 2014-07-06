@@ -1,0 +1,32 @@
+<h1><%= posts[1].slug %></h1>
+<%= posts[1].created_at %>
+<pre>
+<%= posts[1].body %>
+</pre>
+<hr>
+
+<div id="main">
+ <div class="postfake">
+  <h1><a href="/"><%= title %></a></h1>
+ </div>
+<% for k, v in pairs(posts) do %>
+ <div class="post">
+  <div class="postbody">
+  <%= v.body_html %>
+
+  </div>
+  <div class="postmeta">
+   <div class="postdate">
+   <a href="/<%= v.backlink %>"><%= v.pretty_date %></a>
+   </div>
+   <div class="posttags">
+   Tags: <% for _, vt in pairs(v.tags) do %>
+   <a href="/tag/<%= vt %>"><%= vt %></a>
+   <% end %>
+   </div>
+  </div>
+ </div>
+<% end %>
+</div>
+
+

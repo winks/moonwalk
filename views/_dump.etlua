@@ -1,0 +1,60 @@
+<ul>
+<%
+local x = {
+url_params = 1,
+req = 1,
+params = 1,
+GET = 1,
+options = 1,
+layout_opts = 1,
+POST = 1,
+}
+
+for k, v in pairs(xxx) do %>
+  <li><%= k %>:
+<%
+  if type(v) == "table" then
+    if x[k] then %>
+      <ul>
+<%
+      for kk, vv in pairs(v) do %>
+        <li><%= kk %>:
+<%
+        if type(vv) == "table" then
+          for kkk, vvv in pairs(vv) do %>
+            <br>[<%= kkk %>] <%= vvv %>
+<%
+          end
+        else %>
+  <%= vv %>
+<%
+  end %>
+        </li>
+<%
+      end %>
+      </ul>
+<%
+    else %>
+TABLE
+<%
+    end
+  else %>
+  <%= v %>
+<%
+  end %>
+</li>
+<%
+end %>
+</ul>
+
+<% if xxx.POST then -- and xxx.POST.login then
+for k,v in pairs(xxx.POST) do
+%>
+  <%= k %>
+<%
+end
+end %>
+<hr>
+<% -- xxx.POST["login[password]"] %>
+<% -- xxx.params.login["password"] %>
+<% -- xxx.req.params_post["login[password]"] %>

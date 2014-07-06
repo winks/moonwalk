@@ -1,0 +1,18 @@
+<div id="main">
+  <div class="postfake">
+<h1>Hello world</h1>
+<ul>
+<% if session.current_user then %>
+  <li>Hi, <%= session.current_user %>!</li>
+  <li><a href="/">blog</a></li>
+  <li><a href="/logout">logout</a></li>
+<% else %>
+  <li><a href="/">blog</a></li>
+  <li><a href="/login">login</a></li>
+<% end %>
+</ul>
+<br>
+<%= welcome %>
+<br>
+  </div>
+</div>

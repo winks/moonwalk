@@ -1,0 +1,7 @@
+<div id="main">
+  <div class="postfake">
+    <h1><%= status_code %></a></h1><%- preface or '' %>
+  </div>
+</div>
+
+

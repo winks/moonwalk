@@ -1,0 +1,4 @@
+*_temp
+config.lua
+*.compiled
+logs/

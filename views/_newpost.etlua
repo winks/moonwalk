@@ -1,0 +1,6 @@
+<form action="/new/post" method="post" novalidate="novalidate">
+
+<textarea autofocus="autofocus" id="post_body" name="post[body]" rows="3"></textarea>
+<input name="commit" type="submit" value="Create Post" />
+
+</form>

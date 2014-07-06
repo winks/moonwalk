@@ -1,0 +1,15 @@
+<form accept-charset="UTF-8" action="/x/dump" method="post" novalidate="novalidate">
+<input name="utf8" type="hidden" value="&#x2713;" />
+<fieldset><legend>Login</legend>
+<label class="password required control-label" for="login_password">Password</label>
+
+<!--<input autofocus="autofocus" class="password required" id="login_password" name="login_password" type="password" />-->
+<input autofocus="autofocus" class="password required" id="login_password" name="login[password]" type="password" />
+
+<input name="login[remember_me]" type="hidden" value="0" />
+<label class="boolean optional control-label checkbox" for="login_remember_me"><input class="boolean optional" id="login_remember_me" name="login[remember_me]" type="checkbox" value="1" />Remember me</label></div>
+</fieldset>
+
+<input name="commit" type="submit" value="Login" />
+
+</form>
