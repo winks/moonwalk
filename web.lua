@@ -2,6 +2,7 @@ local lapis  = require 'lapis'
 local db     = require 'lapis.db'
 local helper = require 'lapis.application'
 
+local ftl   = require 'lib.ftl'
 local mw    = require 'lib.mw'
 local utils = require 'lib.utils'
 local etlua = require 'etlua'
@@ -42,23 +43,22 @@ app:get('by_tag', "/tag/:tag", function(self)
   return { render = "_post" }
 end)
 
-app:get("/user.json", function(self)
+app:get('user_json', "/user.json", function(self)
   user = mw.get_user(self, 'json')
   return { json = user }
 end)
 
-app:get("/user", function(self)
-  self.title = "moonwalk"
+app:get('user', "/user", function(self)
   user = mw.get_user(self)
-  return { render = "_user" }
+  return ftl.user(self, user)
 end)
 
-app:get("/posts.json", function(self)
+app:get('posts_json', "/posts.json", function(self)
   posts = mw.get_posts(self, {updated_since = self.params.updated_since}, 'json')
   return { json = posts }
 end)
 
-app:get("/posts", function(self)
+app:get('posts', "/posts", function(self)
   return { redirect_to = self:url_for("index") }
 end)
 
