@@ -62,7 +62,7 @@ app:get('posts', "/posts", function(self)
   return { redirect_to = self:url_for("index") }
 end)
 
-app:get("/:tmp", function(self)
+app.default_route = function(self)
   self.title = "moonwalk"
   local p = self.req.parsed_url.path
   print('[' .. p .. ']')
@@ -94,7 +94,7 @@ app:get("/:tmp", function(self)
   preface = navi_fn({session = self.session})
   posts[1] = utils.prepare_post(posts[1])
   return { render = "_post" }
-end)
+end
 
 app:get('/new/post', capture_errors(function(self)
   return { render = "_newpost" }
